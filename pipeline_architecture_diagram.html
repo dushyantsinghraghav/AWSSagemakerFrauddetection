@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Event-Driven ML Pipeline Architecture</title>
+<style>
+  body {
+    margin: 0; padding: 24px;
+    background: #0f1117;
+    display: flex; flex-direction: column;
+    align-items: center; font-family: sans-serif;
+  }
+  h2 {
+    color: #e2e4eb; font-size: 18px; font-weight: 500;
+    margin: 0 0 6px; letter-spacing: -0.01em;
+  }
+  p.sub {
+    color: #6b7280; font-size: 13px; margin: 0 0 24px;
+  }
+  svg { max-width: 680px; width: 100%; }
+
+  /* color ramps — light + dark handled by class */
+  .c-amber rect, .c-amber polygon { fill: #FAEEDA; stroke: #BA7517; }
+  .c-amber text.th { fill: #3d2800; }
+  .c-amber text.ts { fill: #85530b; }
+
+  .c-blue rect { fill: #E6F1FB; stroke: #185FA5; }
+  .c-blue text.th { fill: #042C53; }
+  .c-blue text.ts { fill: #0C447C; }
+
+  .c-purple rect { fill: #EEEDFE; stroke: #534AB7; }
+  .c-purple text.th { fill: #26215C; }
+  .c-purple text.ts { fill: #3C3489; }
+
+  .c-teal rect { fill: #E1F5EE; stroke: #0F6E56; }
+  .c-teal text.th { fill: #04342C; }
+  .c-teal text.ts { fill: #085041; }
+
+  .c-green rect { fill: #EAF3DE; stroke: #3B6D11; }
+  .c-green text.th { fill: #173404; }
+  .c-green text.ts { fill: #27500A; }
+
+  .c-red rect { fill: #FCEBEB; stroke: #A32D2D; }
+  .c-red text.th { fill: #501313; }
+  .c-red text.ts { fill: #791F1F; }
+
+  text.th { font-size: 14px; font-weight: 500; font-family: sans-serif; }
+  text.ts { font-size: 12px; font-weight: 400; font-family: sans-serif; }
+  text.tc { font-size: 11px; font-weight: 400; font-family: sans-serif; fill: #4b5563; }
+
+  .node { cursor: default; }
+  .node:hover rect, .node:hover polygon { opacity: 0.85; }
+
+  /* arrows */
+  .arr { stroke: #6b7280; fill: none; }
+
+  /* container */
+  .container-rect { fill: none; stroke: #374151; stroke-dasharray: 6 4; }
+  .container-label { fill: #6b7280; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; font-family: sans-serif; }
+
+  /* branch labels */
+  .pass-label { fill: #059669; font-size: 11px; font-family: sans-serif; }
+  .fail-label { fill: #dc2626; font-size: 11px; font-family: sans-serif; }
+
+  /* step numbers */
+  .step-num { fill: #6b7280; font-size: 10px; font-family: monospace; letter-spacing: 0.04em; }
+
+  /* tiny event labels beside arrows */
+  .ev-label { fill: #6b7280; font-size: 10px; font-family: sans-serif; }
+
+  @media (prefers-color-scheme: dark) {
+    body { background: #0a0c10; }
+    .c-amber rect, .c-amber polygon { fill: #412402; stroke: #FAC775; }
+    .c-amber text.th { fill: #FAEEDA; }
+    .c-amber text.ts { fill: #FAC775; }
+
+    .c-blue rect { fill: #042C53; stroke: #85B7EB; }
+    .c-blue text.th { fill: #E6F1FB; }
+    .c-blue text.ts { fill: #B5D4F4; }
+
+    .c-purple rect { fill: #26215C; stroke: #AFA9EC; }
+    .c-purple text.th { fill: #EEEDFE; }
+    .c-purple text.ts { fill: #CECBF6; }
+
+    .c-teal rect { fill: #04342C; stroke: #5DCAA5; }
+    .c-teal text.th { fill: #E1F5EE; }
+    .c-teal text.ts { fill: #9FE1CB; }
+
+    .c-green rect { fill: #173404; stroke: #97C459; }
+    .c-green text.th { fill: #EAF3DE; }
+    .c-green text.ts { fill: #C0DD97; }
+
+    .c-red rect { fill: #501313; stroke: #F09595; }
+    .c-red text.th { fill: #FCEBEB; }
+    .c-red text.ts { fill: #F7C1C1; }
+
+    .arr { stroke: #4b5563; }
+    .container-rect { stroke: #374151; }
+    .container-label { fill: #9ca3af; }
+    .ev-label { fill: #9ca3af; }
+    .tc { fill: #9ca3af; }
+    .pass-label { fill: #34d399; }
+    .fail-label { fill: #f87171; }
+    .step-num { fill: #9ca3af; }
+  }
+</style>
+</head>
+<body>
+<h2>Event-Driven ML Pipeline</h2>
+<p class="sub">S3 upload → EventBridge → Lambda → SageMaker Pipeline → Model Registry</p>
+
+<svg viewBox="0 0 680 598" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Event-driven ML pipeline architecture diagram">
+<defs>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<!-- ── Trigger chain ──────────────────────────────────────── -->
+
+<!-- S3 Bucket -->
+<g class="node c-amber">
+  <rect x="230" y="28" width="220" height="52" rx="8" stroke-width="0.5"/>
+  <text class="th" x="340" y="47" text-anchor="middle" dominant-baseline="central">S3 Bucket</text>
+  <text class="ts" x="340" y="64" text-anchor="middle" dominant-baseline="central">data/*.csv upload</text>
+</g>
+
+<!-- Arrow: S3 → EventBridge -->
+<line x1="340" y1="80" x2="340" y2="95" class="arr" stroke-width="1.5" marker-end="url(#arr)"/>
+<text class="ev-label" x="350" y="89">ObjectCreated</text>
+
+<!-- EventBridge Rule -->
+<g class="node c-blue">
+  <rect x="230" y="96" width="220" height="52" rx="8" stroke-width="0.5"/>
+  <text class="th" x="340" y="115" text-anchor="middle" dominant-baseline="central">EventBridge Rule</text>
+  <text class="ts" x="340" y="132" text-anchor="middle" dominant-baseline="central">Matches bucket + prefix</text>
+</g>
+
+<!-- Arrow: EventBridge → Lambda -->
+<line x1="340" y1="148" x2="340" y2="163" class="arr" stroke-width="1.5" marker-end="url(#arr)"/>
+<text class="ev-label" x="350" y="157">Routes to target</text>
+
+<!-- Lambda Trigger -->
+<g class="node c-purple">
+  <rect x="230" y="164" width="220" height="52" rx="8" stroke-width="0.5"/>
+  <text class="th" x="340" y="183" text-anchor="middle" dominant-baseline="central">Lambda Trigger</text>
+  <text class="ts" x="340" y="200" text-anchor="middle" dominant-baseline="central">Validate + start pipeline</text>
+</g>
+
+<!-- Arrow: Lambda → SageMaker container -->
+<line x1="340" y1="216" x2="340" y2="232" class="arr" stroke-width="1.5" marker-end="url(#arr)"/>
+<text class="ev-label" x="350" y="226">start_pipeline_execution()</text>
+
+<!-- ── SageMaker Pipeline container ──────────────────────── -->
+<rect x="88" y="234" width="504" height="344" rx="12" class="container-rect" stroke-width="0.5"/>
+<text class="container-label" x="114" y="252" dominant-baseline="central">SAGEMAKER PIPELINE</text>
+
+<!-- Step numbers (vertical left rail) -->
+<text class="step-num" x="104" y="292" text-anchor="middle" dominant-baseline="central">01</text>
+<text class="step-num" x="104" y="360" text-anchor="middle" dominant-baseline="central">02</text>
+<text class="step-num" x="104" y="428" text-anchor="middle" dominant-baseline="central">03</text>
+<text class="step-num" x="104" y="492" text-anchor="middle" dominant-baseline="central">04</text>
+
+<!-- Step 1: Preprocess -->
+<g class="node c-teal">
+  <rect x="230" y="266" width="220" height="52" rx="8" stroke-width="0.5"/>
+  <text class="th" x="340" y="285" text-anchor="middle" dominant-baseline="central">Preprocess</text>
+  <text class="ts" x="340" y="302" text-anchor="middle" dominant-baseline="central">SKLearn · ml.m5.large</text>
+</g>
+
+<!-- Arrow: Preprocess → Train -->
+<line x1="340" y1="318" x2="340" y2="332" class="arr" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- Step 2: Train -->
+<g class="node c-purple">
+  <rect x="230" y="332" width="220" height="52" rx="8" stroke-width="0.5"/>
+  <text class="th" x="340" y="351" text-anchor="middle" dominant-baseline="central">Train</text>
+  <text class="ts" x="340" y="368" text-anchor="middle" dominant-baseline="central">XGBoost · ml.m5.xlarge</text>
+</g>
+
+<!-- Arrow: Train → Evaluate -->
+<line x1="340" y1="384" x2="340" y2="398" class="arr" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- Step 3: Evaluate -->
+<g class="node c-blue">
+  <rect x="230" y="398" width="220" height="52" rx="8" stroke-width="0.5"/>
+  <text class="th" x="340" y="417" text-anchor="middle" dominant-baseline="central">Evaluate</text>
+  <text class="ts" x="340" y="434" text-anchor="middle" dominant-baseline="central">Accuracy · AUC · F1</text>
+</g>
+
+<!-- Arrow: Evaluate → Condition diamond -->
+<line x1="340" y1="450" x2="340" y2="464" class="arr" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- Step 4: Condition diamond — center=(340,490), half-w=66, half-h=26 -->
+<g class="node c-amber">
+  <polygon points="340,464 406,490 340,516 274,490" stroke-width="0.5"/>
+  <text class="th" x="340" y="484" text-anchor="middle" dominant-baseline="central">Accuracy</text>
+  <text class="ts" x="340" y="500" text-anchor="middle" dominant-baseline="central">≥ threshold?</text>
+</g>
+
+<!-- Branch paths from diamond bottom (340,516) -->
+<path d="M 340 516 L 340 532 L 490 532 L 490 542" fill="none" class="arr" stroke-width="1.5" marker-end="url(#arr)"/>
+<path d="M 340 516 L 340 532 L 185 532 L 185 542" fill="none" class="arr" stroke-width="1.5" marker-end="url(#arr)"/>
+
+<!-- Branch labels -->
+<text class="pass-label" x="418" y="526" text-anchor="middle" dominant-baseline="central">✓ pass</text>
+<text class="fail-label" x="258" y="526" text-anchor="middle" dominant-baseline="central">✗ fail</text>
+
+<!-- Register Model -->
+<g class="node c-green">
+  <rect x="416" y="542" width="148" height="52" rx="8" stroke-width="0.5"/>
+  <text class="th" x="490" y="561" text-anchor="middle" dominant-baseline="central">Register Model</text>
+  <text class="ts" x="490" y="578" text-anchor="middle" dominant-baseline="central">Model Registry</text>
+</g>
+
+<!-- Pipeline Fail -->
+<g class="node c-red">
+  <rect x="116" y="542" width="138" height="52" rx="8" stroke-width="0.5"/>
+  <text class="th" x="185" y="561" text-anchor="middle" dominant-baseline="central">Pipeline Fail</text>
+  <text class="ts" x="185" y="578" text-anchor="middle" dominant-baseline="central">Accuracy too low</text>
+</g>
+
+</svg>
+</body>
+</html>
