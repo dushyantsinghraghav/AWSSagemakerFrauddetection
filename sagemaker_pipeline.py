@@ -44,10 +44,10 @@ logger = logging.getLogger(__name__)
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 PIPELINE_NAME       = os.environ.get("PIPELINE_NAME",        "fraud-detection-retrain")
-BUCKET              = os.environ.get("TRAINING_DATA_BUCKET", "sagemaker-ml-pipeline-585097636488")
-ROLE_ARN            = os.environ.get("SAGEMAKER_ROLE_ARN",   "arn:aws:iam::585097636488:role/SageMakerPipelineRole")
+BUCKET              = os.environ.get("TRAINING_DATA_BUCKET", "")
+ROLE_ARN            = os.environ.get("SAGEMAKER_ROLE_ARN",   "")
 MODEL_PACKAGE_GROUP = os.environ.get("MODEL_PACKAGE_GROUP",  "FraudDetectionModels")
-REGION              = os.environ.get("AWS_REGION",           "ap-southeast-2")
+REGION              = os.environ.get("AWS_REGION",           "")
 
 # Scripts uploaded to S3 by setup_infrastructure.py
 SCRIPTS_S3_PREFIX   = f"s3://{BUCKET}/pipeline-scripts"
