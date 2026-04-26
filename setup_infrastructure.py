@@ -31,7 +31,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
-REGION        = os.environ.get("AWS_REGION",           "ap-southeast-2")
+REGION        = os.environ.get("AWS_REGION",           "")
 ACCOUNT_ID    = boto3.client("sts").get_caller_identity()["Account"]
 BUCKET        = os.environ.get("TRAINING_DATA_BUCKET", f"sagemaker-ml-pipeline-{ACCOUNT_ID}")
 DATA_PREFIX   = os.environ.get("DATA_PREFIX",           "data/")
